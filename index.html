@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CareNexus - 訪問看護キャリア・パスポート</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        trustBlue: '#1e3a8a', // トラストブルー
+                        coralPink: '#fb7185', // コーラルピンク
+                        sunsetOrange: '#fb923c'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムアニメーション設定 */
+        body { background-color: #e5e7eb; margin: 0; font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; }
+        .app-container { max-width: 414px; margin: 0 auto; height: 100vh; background-color: #f8fafc; position: relative; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .toast-enter { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .progress-ring__circle {
+            transition: stroke-dashoffset 1s ease-in-out;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- コンポーネント群 ---
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('home');
+            const [score, setScore] = useState(78);
+            const [toast, setToast] = useState({ show: false, message: '', pts: 0 });
+
+            const showToast = (message, pts) => {
+                setToast({ show: true, message, pts });
+                setTimeout(() => {
+                    setScore(prev => prev + pts);
+                }, 500); // ゲージが上がるアニメーションの遅延
+                setTimeout(() => setToast({ show: false, message: '', pts: 0 }), 3000);
+            };
+
+            return (
+                <div className="app-container">
+                    {/* Header */}
+                    <header className="bg-white shadow-sm px-4 py-3 flex items-center justify-between z-10 relative">
+                        <div className="flex items-center space-x-2">
+                            {/* ロゴ画像：存在しない場合はテキスト表示にフォールバック */}
+                            <img 
+                                src="CareNexuslogo.png" 
+                                alt="CareNexus" 
+                                className="h-6 object-contain"
+                                onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'block';
+                                }}
+                            />
+                            <span className="font-bold text-trustBlue text-lg hidden">CareNexus</span>
+                        </div>
+                        <div className="text-gray-400 text-sm">
+                            <i className="fa-regular fa-bell text-lg"></i>
+                        </div>
+                    </header>
+
+                    {/* Main Content Area */}
+                    <main className="flex-1 overflow-y-auto hide-scrollbar pb-20 relative">
+                        {activeTab === 'home' && <HomeTab score={score} />}
+                        {activeTab === 'record' && <RecordTab showToast={showToast} />}
+                        {activeTab === 'passport' && <PassportTab score={score} />}
+                        {activeTab === 'scout' && <ScoutTab score={score} />}
+
+                        {/* Toast Notification (トースト通知) */}
+                        {toast.show && (
+                            <div className="absolute bottom-4 left-4 right-4 bg-trustBlue text-white p-4 rounded-xl shadow-lg toast-enter flex items-center space-x-3 z-50">
+                                <div className="bg-white text-trustBlue rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                                    +{toast.pts}
+                                </div>
+                                <div className="text-sm font-medium leading-tight">
+                                    {toast.message}
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Bottom Navigation */}
+                    <nav className="bg-white border-t border-gray-200 flex justify-around absolute bottom-0 w-full z-20 pb-safe">
+                        <NavItem icon="fa-house" label="ホーム" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+                        <NavItem icon="fa-pen-to-square" label="記録" isActive={activeTab === 'record'} onClick={() => setActiveTab('record')} />
+                        <NavItem icon="fa-id-badge" label="パスポート" isActive={activeTab === 'passport'} onClick={() => setActiveTab('passport')} />
+                        <NavItem icon="fa-envelope" label="スカウト" isActive={activeTab === 'scout'} onClick={() => setActiveTab('scout')} />
+                    </nav>
+                </div>
+            );
+        };
+
+        const NavItem = ({ icon, label, isActive, onClick }) => (
+            <button onClick={onClick} className={`flex-1 py-3 flex flex-col items-center justify-center transition-colors ${isActive ? 'text-trustBlue' : 'text-gray-400'}`}>
+                <i className={`fa-solid ${icon} text-xl mb-1`}></i>
+                <span className="text-[10px] font-medium">{label}</span>
+            </button>
+        );
+
+        // --- タブコンテンツ ---
+
+        const HomeTab = ({ score }) => {
+            const radius = 60;
+            const circumference = 2 * Math.PI * radius;
+            const strokeDashoffset = circumference - (score / 100) * circumference;
+
+            return (
+                <div className="p-5 space-y-6 animate-fade-in">
+                    <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col items-center relative overflow-hidden">
+                        <div className="absolute top-0 w-full h-2 bg-gradient-to-r from-trustBlue to-coralPink"></div>
+                        <h2 className="text-gray-600 text-sm font-bold mb-4">訪問看護レディネス（準備性）</h2>
+                        <div className="relative flex items-center justify-center">
+                            <svg className="w-40 h-40">
+                                <circle className="text-gray-100" strokeWidth="12" stroke="currentColor" fill="transparent" r={radius} cx="80" cy="80" />
+                                <circle 
+                                    className="text-trustBlue progress-ring__circle" 
+                                    strokeWidth="12" 
+                                    strokeDasharray={circumference} 
+                                    strokeDashoffset={strokeDashoffset} 
+                                    strokeLinecap="round" 
+                                    stroke="currentColor" 
+                                    fill="transparent" 
+                                    r={radius} cx="80" cy="80" 
+                                />
+                            </svg>
+                            <div className="absolute flex flex-col items-center justify-center">
+                                <span className="text-4xl font-extrabold text-gray-800">{score}<span className="text-lg text-gray-400">%</span></span>
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-4 text-center">あと22%で「在宅即戦力」認定です。<br/>日々の病棟での頑張りを記録しましょう。</p>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl shadow-sm p-5 border border-indigo-100">
+                        <h3 className="text-trustBlue font-bold text-sm mb-2"><i className="fa-solid fa-lightbulb text-yellow-500 mr-2"></i>Next Action</h3>
+                        <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                            今週は「退院前カンファレンス」の参加記録をつけてみませんか？ 在宅医療で最も重要な多職種連携スキルとして高く評価されます。
+                        </p>
+                        <button className="bg-white text-trustBlue text-xs font-bold py-2 px-4 rounded-full shadow-sm border border-trustBlue w-full">
+                            記録をつける <i className="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const RecordTab = ({ showToast }) => {
+            const [checked, setChecked] = useState({});
+
+            const handleCheck = (id, title, pts, desc) => {
+                if(!checked[id]) {
+                    setChecked({...checked, [id]: true});
+                    showToast(`『${title}』を記録しました。自動翻訳され、在宅の「${desc}」として評価されました！`, pts);
+                }
+            };
+
+            return (
+                <div className="p-5">
+                    <h2 className="text-xl font-bold text-gray-800 mb-1">本日の業務記録</h2>
+                    <p className="text-xs text-gray-500 mb-5">該当する項目をタップするだけで、自動でスキルが算定されます。</p>
+
+                    <div className="space-y-4">
+                        <RecordItem id="1" title="退院前カンファレンスを主導した" pts={2} desc="多職種連携スキル" checked={checked["1"]} onClick={() => handleCheck("1", "退院前カンファレンス", 2, "多職種連携スキル")} />
+                        <RecordItem id="2" title="患者家族への在宅療養指導を実施" pts={3} desc="家族看護・教育スキル" checked={checked["2"]} onClick={() => handleCheck("2", "家族への療養指導", 3, "家族看護・教育スキル")} />
+                        <RecordItem id="3" title="急変時の一次対応・トリアージ" pts={2} desc="クリティカル推論スキル" checked={checked["3"]} onClick={() => handleCheck("3", "急変時トリアージ", 2, "クリティカル推論スキル")} />
+                        <RecordItem id="4" title="CVポートの管理・抜針" pts={1} desc="在宅医療手技" checked={checked["4"]} onClick={() => handleCheck("4", "CVポート管理", 1, "在宅医療手技")} />
+                    </div>
+                </div>
+            );
+        };
+
+        const RecordItem = ({ title, checked, onClick }) => (
+            <div 
+                onClick={onClick}
+                className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between ${checked ? 'border-coralPink bg-rose-50' : 'border-white bg-white shadow-sm hover:border-gray-200'}`}
+            >
+                <span className={`text-sm font-medium ${checked ? 'text-gray-800' : 'text-gray-600'}`}>{title}</span>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${checked ? 'bg-coralPink border-coralPink text-white' : 'border-gray-300'}`}>
+                    {checked && <i className="fa-solid fa-check text-xs"></i>}
+                </div>
+            </div>
+        );
+
+        const PassportTab = ({ score }) => (
+            <div className="p-5 space-y-5">
+                <div className="bg-trustBlue rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                    <i className="fa-solid fa-shield-halved absolute -right-4 -bottom-4 text-8xl text-white opacity-10"></i>
+                    <h2 className="text-sm font-medium opacity-80 mb-1">Official Credentials</h2>
+                    <h1 className="text-2xl font-bold mb-4">訪問看護キャリア・パスポート</h1>
+                    <div className="flex justify-between items-end">
+                        <div>
+                            <p className="text-xs opacity-80">現在のレディネススコア</p>
+                            <p className="text-3xl font-extrabold">{score}<span className="text-lg font-normal"> pt</span></p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-xs opacity-80 mb-1">監修</p>
+                            <p className="text-xs font-bold bg-white text-trustBlue px-2 py-1 rounded">業界トップランナー委員会</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 className="font-bold text-gray-800 text-sm mt-6 mb-3">獲得バッジ（スキル証明）</h3>
+                <div className="grid grid-cols-3 gap-3">
+                    <Badge icon="fa-users" label="家族看護" active={true} />
+                    <Badge icon="fa-hand-holding-medical" label="臨床推論" active={true} />
+                    <Badge icon="fa-network-wired" label="多職種連携" active={score > 80} />
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm p-4 mt-4 border border-gray-100">
+                    <h3 className="font-bold text-trustBlue text-xs mb-2">自動生成されたあなたの強み（面接用）</h3>
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                        日々のログから、あなたは「退院調整に向けた家族指導」と「急変時のアセスメント」において高い適性を持っています。病棟での経験は、在宅での自律的な判断力として即戦力レベルに達しつつあります。
+                    </p>
+                </div>
+            </div>
+        );
+
+        const Badge = ({ icon, label, active }) => (
+            <div className={`flex flex-col items-center justify-center p-3 rounded-xl border ${active ? 'bg-white border-coralPink shadow-sm' : 'bg-gray-50 border-gray-200 opacity-50 grayscale'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${active ? 'bg-rose-100 text-coralPink' : 'bg-gray-200 text-gray-400'}`}>
+                    <i className={`fa-solid ${icon} text-lg`}></i>
+                </div>
+                <span className="text-[10px] font-bold text-gray-700">{label}</span>
+            </div>
+        );
+
+        const ScoutTab = ({ score }) => (
+            <div className="p-5 h-full flex flex-col">
+                <h2 className="text-xl font-bold text-gray-800 mb-4">届いているスカウト</h2>
+                
+                {score >= 80 ? (
+                    <div className="space-y-4">
+                        <div className="bg-white rounded-2xl shadow-sm p-5 border-l-4 border-sunsetOrange relative">
+                            <span className="absolute top-3 right-3 bg-red-500 text-white text-[9px] font-bold px-2 py-1 rounded-full">NEW</span>
+                            <div className="flex items-center space-x-3 mb-3">
+                                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500"><i className="fa-regular fa-building"></i></div>
+                                <div>
+                                    <h3 className="font-bold text-sm text-gray-800">〇〇訪問看護ステーション</h3>
+                                    <p className="text-xs text-gray-500">東京都 世田谷区</p>
+                                </div>
+                            </div>
+                            <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                                「あなたの『家族看護』と『多職種連携』のスコアを拝見しました。当ステーションが求める人物像に完全に一致しています。まずはカジュアルにお話ししませんか？」
+                            </p>
+                            <button className="w-full bg-trustBlue text-white text-sm font-bold py-2 rounded-lg shadow-md">
+                                返信する
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center px-4 mt-10">
+                        <i className="fa-solid fa-lock text-4xl text-gray-300 mb-4"></i>
+                        <h3 className="text-gray-800 font-bold mb-2">プレミアムスカウト機能</h3>
+                        <p className="text-xs text-gray-500 leading-relaxed">
+                            レディネススコアが <span className="text-trustBlue font-bold">80pt</span> を超えると、あなたのスキルを正当に評価するトップステーションからの非公開スカウトが届くようになります。<br/>あとわずかです！記録を続けましょう。
+                        </p>
+                    </div>
+                )}
+            </div>
+        );
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
