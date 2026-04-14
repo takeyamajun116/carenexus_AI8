@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CareNexus - 寄り添うキャリア翻訳アプリ</title>
+    <title>CareNexus - Career Analytics & Passport</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
@@ -15,40 +15,26 @@
             theme: {
                 extend: {
                     colors: {
-                        trustBlue: '#1e3a8a',
-                        coralPink: '#fb7185',
-                        sage: '#f0f9f1'
+                        navy: '#0f172a',      // 信頼感のあるダークネイビー
+                        trustBlue: '#2563eb', // アクションブルー
+                        surface: '#f8fafc',   // 背景シルバーグレー
+                        borderGray: '#e2e8f0'
                     },
-                    animation: {
-                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'float': 'float 3s ease-in-out infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        }
+                    fontFamily: {
+                        sans: ['"Helvetica Neue"', 'Arial', '"Hiragino Kaku Gothic ProN"', '"Hiragino Sans"', 'Meiryo', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
     <style>
-        body { background-color: #f1f5f9; margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; }
-        .app-container { max-width: 414px; margin: 0 auto; height: 100vh; background-color: #ffffff; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        body { background-color: #f1f5f9; margin: 0; -webkit-font-smoothing: antialiased; }
+        .app-container { max-width: 414px; margin: 0 auto; height: 100vh; background-color: #ffffff; position: relative; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* スワイプカードのアニメーション */
-        .card-swipe-right { transform: translateX(200%) rotate(30deg); opacity: 0; transition: 0.5s; }
-        .card-swipe-left { transform: translateX(-200%) rotate(-30deg); opacity: 0; transition: 0.5s; }
-        .card-in { transform: translateX(0) rotate(0); opacity: 1; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-
-        /* 呼吸するリング */
-        .breathing-ring { transition: stroke-dashoffset 1.5s ease-in-out; transform: rotate(-90deg); transform-origin: 50% 50%; }
-        
-        /* グラデーションテキスト */
-        .grad-text { background: linear-gradient(to right, #1e3a8a, #fb7185); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .progress-ring__circle { transition: stroke-dashoffset 1s ease-out; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -57,112 +43,257 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // --- データ定義 ---
+        const tasksData = [
+            {
+                id: 1,
+                category: "実践・ケア領域",
+                title: "急変対応・トリアージ",
+                examples: "心停止の初期対応、アナフィラキシーショック、急激なSpO2低下時のアセスメントと迅速な医師報告",
+                vnaSkill: "単独訪問時のリスクマネジメント力",
+                insight: "病棟では医師がすぐ駆けつける環境での初期対応ですが、訪問看護では「たった一人で状態悪化の兆候を早期発見し、主治医へ的確に電話で状況を伝え、指示を仰ぐ」という究極のアセスメント力が求められます。自律した急変対応経験は、在宅でのリスク回避の土台となります。",
+                pts: 5
+            },
+            {
+                id: 2,
+                category: "連携・協働領域",
+                title: "退院前カンファレンス・退院支援",
+                examples: "MSWやリハ職との調整、退院サマリーの共有、ケアマネジャーへの申し送り",
+                vnaSkill: "地域資源の活用と多職種連携力",
+                insight: "院内での多職種調整の経験は、在宅においてケアマネジャーや他事業所と連携し、患者の生活を地域全体で支えるコーディネート力に直結します。退院後の生活を見据えたアセスメントは、訪問看護の核となるスキルです。",
+                pts: 5
+            },
+            {
+                id: 3,
+                category: "意思決定支援領域",
+                title: "終末期患者のACP支援",
+                examples: "予後告知後の精神的フォロー、家族を含めた看取りの希望聴取、DNAR確認",
+                vnaSkill: "多様な価値観に基づく看取り支援力",
+                insight: "病院という非日常空間での同意サポート経験は、患者の自宅という「日常」において、家族をエンパワメントし、その人らしい最期を支える高度な倫理的判断力へと昇華されます。",
+                pts: 4
+            }
+        ];
+
         const App = () => {
             const [activeTab, setActiveTab] = useState('home');
-            const [score, setScore] = useState(68);
-            const [history, setHistory] = useState([
-                { id: 101, title: 'CVポート管理', date: '昨日', pts: 2 },
-                { id: 102, title: '多職種カンファ', date: '2日前', pts: 4 }
-            ]);
-            const [toast, setToast] = useState({ show: false, message: '', translation: '', pts: 0 });
+            const [score, setScore] = useState(65);
+            // 評価ステータス保存 { taskId: level(0~3) }
+            const [inventory, setInventory] = useState({ 1: 0, 2: 0, 3: 0 });
+            const [showInsightModal, setShowInsightModal] = useState(false);
+            const [newlyAcquired, setNewlyAcquired] = useState([]);
 
-            const triggerTranslation = (jnaTask, vnaSkill, pts) => {
-                setToast({ show: true, message: jnaTask, translation: vnaSkill, pts });
-                setTimeout(() => setScore(prev => prev + pts), 600);
-                setHistory(prev => [{ id: Date.now(), title: jnaTask, date: 'たった今', pts }, ...prev]);
-                setTimeout(() => setToast({ show: false, message: '', translation: '', pts: 0 }), 4000);
+            const handleUpdateInventory = (id, level) => {
+                setInventory(prev => ({ ...prev, [id]: level }));
+            };
+
+            const submitInventory = () => {
+                let gainedPts = 0;
+                let acquired = [];
+                tasksData.forEach(task => {
+                    const level = inventory[task.id];
+                    // レベル2(自律)以上でスキル認定
+                    if (level >= 2) {
+                        gainedPts += task.pts;
+                        acquired.push(task);
+                    }
+                });
+                
+                if (acquired.length > 0) {
+                    setScore(prev => Math.min(prev + gainedPts, 100));
+                    setNewlyAcquired(acquired);
+                    setShowInsightModal(true);
+                } else {
+                    // 自律レベルに達していない場合はホームへ
+                    setActiveTab('home');
+                }
             };
 
             return (
                 <div className="app-container">
-                    {/* Header: ロゴのみのシンプル設計 */}
-                    <header className="px-6 py-4 flex items-center justify-between border-b border-gray-50 bg-white/80 backdrop-blur-md sticky top-0 z-50">
-                        <img src="CareNexuslogo.png" alt="CareNexus" className="h-7 object-contain" onError={(e) => { e.target.outerHTML = '<span class="font-bold text-trustBlue">CareNexus</span>'; }} />
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                            <i className="fa-regular fa-user text-sm"></i>
+                    {/* Header */}
+                    <header className="px-5 py-4 flex items-center justify-between bg-navy text-white z-10">
+                        <div className="flex items-center space-x-2">
+                            <span className="font-bold tracking-wider text-sm">CareNexus</span>
+                        </div>
+                        <div className="text-xs font-medium text-slate-300">
+                            Professional Portal
                         </div>
                     </header>
 
-                    <main className="flex-1 overflow-y-auto hide-scrollbar pb-24">
-                        {activeTab === 'home' && <HomeTab score={score} history={history} />}
-                        {activeTab === 'record' && <RecordTab onTranslate={triggerTranslation} />}
-                        {activeTab === 'passport' && <PassportTab score={score} />}
+                    {/* Main Content Area */}
+                    <main className="flex-1 overflow-y-auto hide-scrollbar bg-surface relative pb-20">
+                        {activeTab === 'home' && <HomeTab score={score} setActiveTab={setActiveTab} />}
+                        {activeTab === 'record' && <RecordTab inventory={inventory} handleUpdateInventory={handleUpdateInventory} submitInventory={submitInventory} />}
+                        {activeTab === 'passport' && <PassportTab score={score} inventory={inventory} />}
                         {activeTab === 'scout' && <ScoutTab score={score} />}
 
-                        {/* 翻訳ポップアップ（自己肯定感爆上げエフェクト） */}
-                        {toast.show && (
-                            <div className="fixed bottom-24 left-4 right-4 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-5 border border-blue-50 z-[100] animate-bounce-in">
-                                <div className="flex items-center space-x-4">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-trustBlue to-coralPink rounded-full flex items-center justify-center text-white shadow-lg animate-pulse">
-                                        <i className="fa-solid fa-wand-magic-sparkles"></i>
+                        {/* Insight Modal (翻訳結果とインサイトの提示) */}
+                        {showInsightModal && (
+                            <div className="absolute inset-0 bg-navy/80 backdrop-blur-sm z-50 flex flex-col items-center justify-end animate-fade-in">
+                                <div className="bg-white w-full h-[85%] rounded-t-3xl p-6 overflow-y-auto shadow-2xl flex flex-col">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h2 className="text-lg font-bold text-navy">キャリア翻訳レポート</h2>
+                                        <button onClick={() => { setShowInsightModal(false); setActiveTab('passport'); }} className="w-8 h-8 bg-slate-100 rounded-full text-slate-500">
+                                            <i className="fa-solid fa-xmark"></i>
+                                        </button>
                                     </div>
-                                    <div className="flex-1">
-                                        <p className="text-[10px] font-bold text-trustBlue tracking-widest uppercase opacity-60">Success Translation</p>
-                                        <p className="text-sm font-bold text-gray-800 leading-tight">在宅スキル「{toast.translation}」を獲得！</p>
-                                        <p className="text-[11px] text-gray-400 mt-1">病棟経験が価値に変わりました（+{toast.pts}pt）</p>
+                                    <p className="text-sm text-slate-600 mb-6">今月の棚卸しにより、以下の病棟経験が在宅スキルとして高く評価（翻訳）されました。</p>
+                                    
+                                    <div className="space-y-6 flex-1">
+                                        {newlyAcquired.map(task => (
+                                            <div key={task.id} className="bg-slate-50 border border-borderGray rounded-xl p-5">
+                                                <div className="flex items-center space-x-2 mb-2">
+                                                    <span className="bg-trustBlue text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">VNA Skill</span>
+                                                    <span className="text-sm font-bold text-navy">{task.vnaSkill}</span>
+                                                </div>
+                                                <p className="text-[11px] text-slate-500 mb-4 pb-4 border-b border-borderGray">
+                                                    評価元: {task.title}（自律レベル）
+                                                </p>
+                                                <h4 className="text-xs font-bold text-slate-700 mb-2"><i className="fa-solid fa-lightbulb text-amber-500 mr-2"></i>VNA Insight（在宅医療への接続）</h4>
+                                                <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                                                    {task.insight}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-6">
+                                        <button onClick={() => { setShowInsightModal(false); setActiveTab('passport'); }} className="w-full bg-navy text-white text-sm font-bold py-4 rounded-xl shadow-lg">
+                                            パスポートを確認する
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         )}
                     </main>
 
-                    {/* Navbar: 認知的負荷を下げたアイコン配置 */}
-                    <nav className="fixed bottom-0 w-full max-w-[414px] bg-white/90 backdrop-blur-lg border-t border-gray-100 flex justify-around py-3 pb-6 z-50">
-                        <NavItem icon="fa-house" label="Home" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-                        <NavItem icon="fa-bolt-lightning" label="Log" active={activeTab === 'record'} onClick={() => setActiveTab('record')} />
-                        <NavItem icon="fa-leaf" label="Tree" active={activeTab === 'passport'} onClick={() => setActiveTab('passport')} />
-                        <NavItem icon="fa-heart" label="Connect" active={activeTab === 'scout'} onClick={() => setActiveTab('scout')} />
+                    {/* Bottom Navigation */}
+                    <nav className="bg-white border-t border-borderGray flex justify-around absolute bottom-0 w-full z-20 pb-safe">
+                        <NavItem icon="fa-chart-pie" label="Dashboard" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+                        <NavItem icon="fa-list-check" label="Inventory" isActive={activeTab === 'record'} onClick={() => setActiveTab('record')} />
+                        <NavItem icon="fa-id-card" label="Passport" isActive={activeTab === 'passport'} onClick={() => setActiveTab('passport')} />
+                        <NavItem icon="fa-building" label="Scouts" isActive={activeTab === 'scout'} onClick={() => setActiveTab('scout')} />
                     </nav>
                 </div>
             );
         };
 
-        const NavItem = ({ icon, label, active, onClick }) => (
-            <button onClick={onClick} className={`flex flex-col items-center transition-all ${active ? 'text-trustBlue scale-110' : 'text-gray-300'}`}>
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-1 ${active ? 'bg-blue-50' : ''}`}>
-                    <i className={`fa-solid ${icon} text-lg`}></i>
-                </div>
-                <span className="text-[9px] font-bold tracking-tighter uppercase">{label}</span>
+        const NavItem = ({ icon, label, isActive, onClick }) => (
+            <button onClick={onClick} className={`flex-1 py-3 flex flex-col items-center justify-center transition-colors ${isActive ? 'text-trustBlue' : 'text-slate-400'}`}>
+                <i className={`fa-solid ${icon} text-lg mb-1`}></i>
+                <span className="text-[9px] font-bold tracking-wider uppercase">{label}</span>
             </button>
         );
 
-        // --- タブ：ホーム（癒やしと振り返り） ---
-        const HomeTab = ({ score, history }) => {
-            const radius = 70;
-            const circum = 2 * Math.PI * radius;
-            const offset = circum - (score / 100) * circum;
+        // --- タブ：ダッシュボード ---
+        const HomeTab = ({ score, setActiveTab }) => {
+            const radius = 60;
+            const circumference = 2 * Math.PI * radius;
+            const strokeDashoffset = circumference - (score / 100) * circumference;
 
             return (
-                <div className="p-6 space-y-8 animate-in fade-in duration-500">
-                    <div>
-                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Welcome back</p>
-                        <h1 className="text-2xl font-bold text-gray-800">夜勤、本当にお疲れ様でした。</h1>
-                    </div>
+                <div className="p-6 space-y-6 fade-in">
+                    <h1 className="text-xl font-bold text-navy mb-1">Overview</h1>
+                    <p className="text-xs text-slate-500 mb-6">現在のあなたの市場価値とレディネス</p>
 
-                    <div className="relative flex flex-col items-center py-4">
-                        <svg className="w-48 h-48 drop-shadow-[0_10px_20px_rgba(30,58,138,0.1)]">
-                            <circle className="text-slate-50" strokeWidth="12" stroke="currentColor" fill="transparent" r={radius} cx="96" cy="96" />
-                            <circle className="text-trustBlue breathing-ring animate-pulse-slow" strokeWidth="12" strokeDasharray={circum} strokeDashoffset={offset} strokeLinecap="round" stroke="currentColor" fill="transparent" r={radius} cx="96" cy="96" />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-5xl font-black text-slate-800 tracking-tighter">{score}%</span>
-                            <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Readiness</span>
+                    <div className="bg-white rounded-2xl shadow-sm border border-borderGray p-6 flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-1">VNA Readiness</p>
+                            <div className="flex items-baseline space-x-1">
+                                <span className="text-4xl font-black text-navy tracking-tighter">{score}</span>
+                                <span className="text-sm font-bold text-slate-400">%</span>
+                            </div>
+                            <p className="text-[10px] text-trustBlue font-bold mt-2 bg-blue-50 px-2 py-1 rounded inline-block">認定まであと {100 - score} pt</p>
+                        </div>
+                        <div className="relative">
+                            <svg className="w-28 h-28">
+                                <circle className="text-slate-100" strokeWidth="8" stroke="currentColor" fill="transparent" r={radius} cx="56" cy="56" />
+                                <circle 
+                                    className="text-trustBlue progress-ring__circle" 
+                                    strokeWidth="8" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" stroke="currentColor" fill="transparent" r={radius} cx="56" cy="56" 
+                                />
+                            </svg>
                         </div>
                     </div>
 
+                    <div className="bg-navy text-white rounded-2xl p-6 relative overflow-hidden shadow-md">
+                        <div className="absolute -right-4 -top-4 opacity-10"><i className="fa-solid fa-calendar-check text-8xl"></i></div>
+                        <h3 className="text-sm font-bold mb-2">今月のキャリア棚卸し</h3>
+                        <p className="text-xs text-slate-300 leading-relaxed mb-4">
+                            月に一度、病棟での実践を振り返りましょう。厳格な基準であなたのスキルを在宅医療の文脈に翻訳します。
+                        </p>
+                        <button onClick={() => setActiveTab('record')} className="bg-trustBlue text-white text-xs font-bold py-3 px-4 rounded-lg shadow w-full hover:bg-blue-700 transition">
+                            今月の棚卸しを開始する
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- タブ：月次棚卸し（厳密な4段階評価） ---
+        const RecordTab = ({ inventory, handleUpdateInventory, submitInventory }) => {
+            return (
+                <div className="p-6 h-full flex flex-col fade-in">
+                    <div className="mb-6">
+                        <h1 className="text-xl font-bold text-navy mb-1">Career Inventory</h1>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                            以下の具体例を参考に、現在のあなたの実践レベルを最も正確に表すステータスを選択してください。（自律レベル以上で評価に反映されます）
+                        </p>
+                    </div>
+
+                    <div className="space-y-8 pb-6 flex-1">
+                        {tasksData.map((task) => (
+                            <InventoryItem 
+                                key={task.id} 
+                                task={task} 
+                                currentLevel={inventory[task.id]} 
+                                onChange={(level) => handleUpdateInventory(task.id, level)} 
+                            />
+                        ))}
+                    </div>
+
+                    <div className="mt-4">
+                        <button onClick={submitInventory} className="w-full bg-navy text-white text-sm font-bold py-4 rounded-xl shadow-lg active:bg-slate-800 transition">
+                            評価を確定し、翻訳する
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const InventoryItem = ({ task, currentLevel, onChange }) => {
+            const levels = [
+                { val: 0, label: "未経験" },
+                { val: 1, label: "指導下で実施" },
+                { val: 2, label: "自律して実践" },
+                { val: 3, label: "他者を指導" }
+            ];
+
+            return (
+                <div className="bg-white border border-borderGray rounded-xl p-5 shadow-sm">
+                    <div className="mb-4">
+                        <span className="text-[10px] font-bold text-trustBlue tracking-wider">{task.category}</span>
+                        <h3 className="text-sm font-bold text-navy mt-1 mb-2">{task.title}</h3>
+                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <p className="text-[10px] font-bold text-slate-500 mb-1">【具体例】</p>
+                            <p className="text-[11px] text-slate-600 leading-relaxed">{task.examples}</p>
+                        </div>
+                    </div>
+                    
                     <div>
-                        <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
-                            <i className="fa-solid fa-clock-rotate-left mr-2 text-trustBlue"></i>最近の翻訳履歴
-                        </h3>
-                        <div className="space-y-3">
-                            {history.map(item => (
-                                <div key={item.id} className="bg-white border border-gray-100 p-4 rounded-2xl flex items-center justify-between shadow-sm">
-                                    <div>
-                                        <p className="text-xs font-bold text-gray-700">{item.title}</p>
-                                        <p className="text-[10px] text-gray-400">{item.date} に価値を証明</p>
-                                    </div>
-                                    <span className="text-xs font-black text-trustBlue">+{item.pts}pt</span>
-                                </div>
+                        <p className="text-[10px] font-bold text-slate-400 mb-2">習熟度ステータス</p>
+                        <div className="grid grid-cols-2 gap-2">
+                            {levels.map(lvl => (
+                                <button 
+                                    key={lvl.val}
+                                    onClick={() => onChange(lvl.val)}
+                                    className={`py-2 px-1 text-[10px] font-bold rounded flex items-center justify-center border transition-all
+                                        ${currentLevel === lvl.val 
+                                            ? 'bg-trustBlue border-trustBlue text-white shadow-sm' 
+                                            : 'bg-white border-borderGray text-slate-500 hover:bg-slate-50'}`}
+                                >
+                                    {currentLevel === lvl.val && <i className="fa-solid fa-check mr-1"></i>}
+                                    {lvl.label}
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -170,140 +301,103 @@
             );
         };
 
-        // --- タブ：業務翻訳（スワイプUI） ---
-        const RecordTab = ({ onTranslate }) => {
-            const cards = [
-                { id: 1, q: "今日、急変対応やトリアージを経験しましたか？", jna: "急変対応", vna: "リスクマネジメント力", pts: 4 },
-                { id: 2, q: "退院前カンファレンスで発言や調整をしましたか？", jna: "退院調整", vna: "多職種連携・調整力", pts: 5 },
-                { id: 3, q: "終末期患者さんの意思決定に寄り添いましたか？", jna: "ACP支援", vna: "看取り支援・倫理判断力", pts: 4 },
-                { id: 4, q: "後輩の指導やリーダー業務を担当しましたか？", jna: "後輩指導", vna: "ステーション運営能力", pts: 3 },
-            ];
-            const [index, setIndex] = useState(0);
-            const [swipeDir, setSwipeDir] = useState('card-in');
-
-            const handleAction = (isYes) => {
-                setSwipeDir(isYes ? 'card-swipe-right' : 'card-swipe-left');
-                if(isYes) onTranslate(cards[index].jna, cards[index].vna, cards[index].pts);
-                
-                setTimeout(() => {
-                    setIndex(prev => (prev + 1) % cards.length);
-                    setSwipeDir('card-in');
-                }, 500);
-            };
-
+        // --- タブ：パスポート（証明書） ---
+        const PassportTab = ({ score, inventory }) => {
             return (
-                <div className="p-6 h-full flex flex-col items-center justify-center">
-                    <div className="text-center mb-10 px-4">
-                        <h2 className="text-xl font-bold text-gray-800 mb-2">今日の「当たり前」を<br/>価値に変える。</h2>
-                        <p className="text-xs text-gray-400">当てはまるものをスワイプ、またはタップしてください</p>
-                    </div>
-
-                    <div className="relative w-full aspect-[4/5] flex items-center justify-center">
-                        <div className={`absolute w-full h-full bg-white rounded-[40px] shadow-[0_30px_60px_rgba(0,0,0,0.12)] border border-blue-50 p-8 flex flex-col items-center justify-center text-center ${swipeDir}`}>
-                            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-8 text-trustBlue animate-float">
-                                <i className="fa-solid fa-hospital-user text-3xl"></i>
+                <div className="p-6 space-y-6 fade-in">
+                    <div className="bg-navy rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                        <div className="absolute right-0 top-0 w-32 h-32 bg-trustBlue rounded-full blur-[50px] opacity-20"></div>
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <p className="text-[9px] font-bold opacity-60 tracking-widest uppercase mb-1">Official Credentials</p>
+                                <h1 className="text-lg font-bold">VNA Career Passport</h1>
                             </div>
-                            <p className="text-lg font-bold leading-relaxed text-gray-800">{cards[index].q}</p>
+                            <div className="w-8 h-8 bg-white/10 backdrop-blur rounded flex items-center justify-center">
+                                <i className="fa-solid fa-qrcode text-sm"></i>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-end space-x-6 border-t border-white/10 pt-4">
+                            <div>
+                                <p className="text-[9px] opacity-60 uppercase mb-1">Score</p>
+                                <p className="text-2xl font-black">{score}</p>
+                            </div>
+                            <div>
+                                <p className="text-[9px] opacity-60 uppercase mb-1">Status</p>
+                                <p className="text-xs font-bold text-emerald-400"><i className="fa-solid fa-circle text-[8px] mr-1"></i>Verified</p>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex space-x-6 mt-12 w-full px-10">
-                        <button onClick={() => handleAction(false)} className="flex-1 py-4 bg-slate-100 rounded-2xl text-slate-400 active:scale-95 transition">
-                            <i className="fa-solid fa-xmark text-xl"></i>
-                        </button>
-                        <button onClick={() => handleAction(true)} className="flex-1 py-4 bg-gradient-to-r from-trustBlue to-blue-700 rounded-2xl text-white shadow-lg active:scale-95 transition">
-                            <i className="fa-solid fa-check text-xl"></i>
-                        </button>
+                    <div>
+                        <h3 className="text-sm font-bold text-navy mb-4">認定済みスキル（自律レベル以上）</h3>
+                        <div className="space-y-3">
+                            {tasksData.map(task => {
+                                const level = inventory[task.id];
+                                const isVerified = level >= 2;
+                                return (
+                                    <div key={task.id} className={`p-4 rounded-xl border flex items-center justify-between transition-all ${isVerified ? 'bg-white border-trustBlue shadow-sm' : 'bg-slate-50 border-borderGray opacity-50'}`}>
+                                        <div>
+                                            <p className={`text-xs font-bold ${isVerified ? 'text-navy' : 'text-slate-500'}`}>{task.vnaSkill}</p>
+                                            <p className="text-[10px] text-slate-400 mt-1">
+                                                {isVerified ? `病棟実績: ${task.title}` : '未認定（自律的実践が必要）'}
+                                            </p>
+                                        </div>
+                                        {isVerified && <i className="fa-solid fa-shield-check text-trustBlue text-lg"></i>}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             );
         };
 
-        // --- タブ：スキルツリー（パスポート） ---
-        const PassportTab = ({ score }) => (
-            <div className="p-6 space-y-8">
-                <div className="bg-slate-900 rounded-[32px] p-8 text-white relative overflow-hidden shadow-2xl">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-coralPink rounded-full blur-[60px] opacity-20"></div>
-                    <p className="text-[10px] font-black tracking-[0.2em] opacity-40 mb-1 uppercase">Passport Level</p>
-                    <h2 className="text-3xl font-black mb-6 italic">Ready to Visit</h2>
-                    <div className="flex justify-between items-end">
-                        <div className="text-center border-r border-white/10 pr-6">
-                            <p className="text-[9px] opacity-40 uppercase font-bold">Skills</p>
-                            <p className="text-xl font-bold">12</p>
-                        </div>
-                        <div className="text-center px-6">
-                            <p className="text-[9px] opacity-40 uppercase font-bold">Score</p>
-                            <p className="text-xl font-bold">{score}</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-[9px] opacity-40 uppercase font-bold">Cert</p>
-                            <i className="fa-solid fa-circle-check text-coralPink"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 className="text-sm font-bold text-gray-800 mb-6 flex items-center">
-                        <i className="fa-solid fa-seedling mr-2 text-trustBlue"></i>育っている在宅スキル
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <TreeNodes label="アセスメント力" active={true} />
-                        <TreeNodes label="多職種連携" active={score > 70} />
-                        <TreeNodes label="看取り支援" active={score > 80} />
-                        <TreeNodes label="ステーション管理" active={score > 90} />
-                    </div>
-                </div>
-
-                <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100">
-                    <p className="text-[10px] font-bold text-trustBlue mb-2">AI Career Insight</p>
-                    <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                        「病棟での急変対応経験」があなたの強みです。これは在宅では「一人で判断する自信」として高く評価されます。もうすぐ認定レベルです。
-                    </p>
-                </div>
-            </div>
-        );
-
-        const TreeNodes = ({ label, active }) => (
-            <div className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center space-y-2 transition-all ${active ? 'bg-white border-trustBlue shadow-sm' : 'bg-gray-50 border-gray-100 opacity-40'}`}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${active ? 'bg-blue-50 text-trustBlue' : 'bg-gray-100'}`}>
-                    <i className={`fa-solid ${active ? 'fa-leaf' : 'fa-lock'} text-sm`}></i>
-                </div>
-                <span className="text-[10px] font-bold text-gray-800">{label}</span>
-            </div>
-        );
-
-        // --- タブ：スカウト（Connect） ---
+        // --- タブ：スカウト ---
         const ScoutTab = ({ score }) => (
-            <div className="p-6">
-                <h2 className="text-2xl font-black text-gray-800 mb-2">新たな出会い</h2>
-                <p className="text-xs text-gray-400 mb-8">あなたの価値を認めるステーションが待っています</p>
+            <div className="p-6 h-full flex flex-col fade-in">
+                <h2 className="text-xl font-bold text-navy mb-1">Connect</h2>
+                <p className="text-xs text-slate-500 mb-6">厳格な審査を通過したステーションからのオファー</p>
 
                 {score >= 70 ? (
-                    <div className="space-y-6">
-                        <div className="group bg-white rounded-[32px] overflow-hidden border border-gray-100 shadow-sm active:scale-[0.98] transition">
-                            <div className="h-40 bg-slate-200 relative">
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                                <div className="absolute bottom-4 left-4 text-white">
-                                    <h4 className="font-bold text-sm">あおぞら訪問看護ステーション</h4>
-                                    <p className="text-[10px] opacity-80">東京都 世田谷区</p>
+                    <div className="space-y-4">
+                        <div className="bg-white rounded-2xl shadow-sm border border-borderGray overflow-hidden relative">
+                            <div className="h-1 bg-trustBlue w-full"></div>
+                            <div className="p-5">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-10 h-10 bg-slate-100 rounded text-slate-600 flex items-center justify-center">
+                                            <i className="fa-solid fa-building"></i>
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-sm text-navy">慶應・広尾訪問看護ステーション</h3>
+                                            <p className="text-[10px] text-slate-500">東京都 渋谷区 / 大規模・教育体制充実</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white text-[9px] font-bold px-3 py-1 rounded-full uppercase">Top Tier</div>
-                            </div>
-                            <div className="p-6">
-                                <p className="text-xs text-gray-600 leading-relaxed mb-6">
-                                    「病棟での多職種連携スキル、素晴らしいですね。在宅でのチーム医療を支える要としてお迎えしたいです。まずは見学からいかがですか？」
-                                </p>
-                                <button className="w-full py-4 bg-trustBlue text-white rounded-2xl text-xs font-bold shadow-lg shadow-blue-200 active:bg-blue-800">
-                                    15分だけカジュアルに話す
-                                </button>
+                                <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mb-4">
+                                    <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                                        「あなたのパスポートを拝見しました。病棟での『自律した急変対応』と『退院支援』の実績は、当ステーションが求めるリスクマネジメント力そのものです。まずは見学やカジュアル面談でお話ししませんか？」
+                                    </p>
+                                </div>
+                                <div className="flex space-x-3">
+                                    <button className="flex-1 border border-borderGray text-navy text-xs font-bold py-3 rounded-lg hover:bg-slate-50 transition">
+                                        詳細を見る
+                                    </button>
+                                    <button className="flex-1 bg-navy text-white text-xs font-bold py-3 rounded-lg hover:bg-slate-800 transition shadow-sm">
+                                        面談を希望する
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    <div className="text-center py-20 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200">
-                        <i className="fa-solid fa-lock text-4xl text-slate-200 mb-4"></i>
-                        <p className="text-sm font-bold text-slate-400">レディネス 70% で解放</p>
-                        <p className="text-[10px] text-slate-300 mt-2">あと少しでステーションから<br/>お声がかかるようになります。</p>
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                        <i className="fa-solid fa-lock text-3xl text-slate-300 mb-3"></i>
+                        <h3 className="text-sm font-bold text-slate-500 mb-2">プレミアムスカウトはロックされています</h3>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            レディネススコアが <span className="font-bold text-navy">70pt</span> に達すると、あなたの証明されたスキルにマッチする優良ステーションからのスカウトが解放されます。
+                        </p>
                     </div>
                 )}
             </div>
