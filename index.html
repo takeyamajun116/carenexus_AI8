@@ -15,9 +15,9 @@
             theme: {
                 extend: {
                     colors: {
-                        navy: '#0f172a',      // 信頼感のあるダークネイビー
-                        trustBlue: '#2563eb', // アクションブルー
-                        surface: '#f8fafc',   // 背景シルバーグレー
+                        navy: '#0f172a',      
+                        trustBlue: '#2563eb', 
+                        surface: '#f8fafc',   
                         borderGray: '#e2e8f0'
                     },
                     fontFamily: {
@@ -29,12 +29,20 @@
     </script>
     <style>
         body { background-color: #f1f5f9; margin: 0; -webkit-font-smoothing: antialiased; }
-        .app-container { max-width: 414px; margin: 0 auto; height: 100vh; background-color: #ffffff; position: relative; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        .app-container { max-width: 414px; margin: 0 auto; height: 100vh; background-color: #f8fafc; position: relative; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .progress-ring__circle { transition: stroke-dashoffset 1s ease-out; transform: rotate(-90deg); transform-origin: 50% 50%; }
-        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .modal-up { animation: modalUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        @keyframes modalUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -77,7 +85,6 @@
         const App = () => {
             const [activeTab, setActiveTab] = useState('home');
             const [score, setScore] = useState(65);
-            // 評価ステータス保存 { taskId: level(0~3) }
             const [inventory, setInventory] = useState({ 1: 0, 2: 0, 3: 0 });
             const [showInsightModal, setShowInsightModal] = useState(false);
             const [newlyAcquired, setNewlyAcquired] = useState([]);
@@ -91,7 +98,6 @@
                 let acquired = [];
                 tasksData.forEach(task => {
                     const level = inventory[task.id];
-                    // レベル2(自律)以上でスキル認定
                     if (level >= 2) {
                         gainedPts += task.pts;
                         acquired.push(task);
@@ -103,7 +109,6 @@
                     setNewlyAcquired(acquired);
                     setShowInsightModal(true);
                 } else {
-                    // 自律レベルに達していない場合はホームへ
                     setActiveTab('home');
                 }
             };
@@ -111,53 +116,57 @@
             return (
                 <div className="app-container">
                     {/* Header */}
-                    <header className="px-5 py-4 flex items-center justify-between bg-navy text-white z-10">
+                    <header className="px-6 py-4 flex items-center justify-between bg-navy text-white z-10 shadow-sm">
                         <div className="flex items-center space-x-2">
                             <span className="font-bold tracking-wider text-sm">CareNexus</span>
                         </div>
-                        <div className="text-xs font-medium text-slate-300">
-                            Professional Portal
+                        <div className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">
+                            Professional
                         </div>
                     </header>
 
-                    {/* Main Content Area */}
-                    <main className="flex-1 overflow-y-auto hide-scrollbar bg-surface relative pb-20">
+                    {/* Main Content */}
+                    {/* pb-24 を指定して、下部のナビゲーションバーとコンテンツが被らないようにする */}
+                    <main className="flex-1 overflow-y-auto hide-scrollbar bg-surface relative pb-24">
                         {activeTab === 'home' && <HomeTab score={score} setActiveTab={setActiveTab} />}
                         {activeTab === 'record' && <RecordTab inventory={inventory} handleUpdateInventory={handleUpdateInventory} submitInventory={submitInventory} />}
                         {activeTab === 'passport' && <PassportTab score={score} inventory={inventory} />}
                         {activeTab === 'scout' && <ScoutTab score={score} />}
 
-                        {/* Insight Modal (翻訳結果とインサイトの提示) */}
+                        {/* Insight Modal */}
                         {showInsightModal && (
-                            <div className="absolute inset-0 bg-navy/80 backdrop-blur-sm z-50 flex flex-col items-center justify-end animate-fade-in">
-                                <div className="bg-white w-full h-[85%] rounded-t-3xl p-6 overflow-y-auto shadow-2xl flex flex-col">
-                                    <div className="flex justify-between items-center mb-6">
+                            <div className="absolute inset-0 bg-navy/60 backdrop-blur-sm z-50 flex flex-col justify-end">
+                                <div className="bg-white w-full h-[85%] rounded-t-[32px] p-6 overflow-y-auto hide-scrollbar shadow-2xl flex flex-col modal-up">
+                                    <div className="flex justify-between items-center mb-6 sticky top-0 bg-white z-10 py-2">
                                         <h2 className="text-lg font-bold text-navy">キャリア翻訳レポート</h2>
-                                        <button onClick={() => { setShowInsightModal(false); setActiveTab('passport'); }} className="w-8 h-8 bg-slate-100 rounded-full text-slate-500">
+                                        <button onClick={() => { setShowInsightModal(false); setActiveTab('passport'); }} className="w-8 h-8 bg-slate-100 rounded-full text-slate-500 flex items-center justify-center hover:bg-slate-200 transition">
                                             <i className="fa-solid fa-xmark"></i>
                                         </button>
                                     </div>
-                                    <p className="text-sm text-slate-600 mb-6">今月の棚卸しにより、以下の病棟経験が在宅スキルとして高く評価（翻訳）されました。</p>
+                                    <p className="text-sm text-slate-600 mb-6 leading-relaxed">今月の棚卸しにより、以下の病棟経験が在宅スキルとして高く評価（翻訳）されました。</p>
                                     
                                     <div className="space-y-6 flex-1">
                                         {newlyAcquired.map(task => (
-                                            <div key={task.id} className="bg-slate-50 border border-borderGray rounded-xl p-5">
-                                                <div className="flex items-center space-x-2 mb-2">
-                                                    <span className="bg-trustBlue text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">VNA Skill</span>
-                                                    <span className="text-sm font-bold text-navy">{task.vnaSkill}</span>
+                                            <div key={task.id} className="bg-slate-50 border border-borderGray rounded-2xl p-5 relative overflow-hidden">
+                                                <div className="absolute top-0 left-0 w-1 h-full bg-trustBlue"></div>
+                                                <div className="flex items-center space-x-2 mb-3">
+                                                    <span className="bg-blue-100 text-trustBlue text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest">VNA Skill</span>
                                                 </div>
+                                                <h3 className="text-sm font-bold text-navy mb-2">{task.vnaSkill}</h3>
                                                 <p className="text-[11px] text-slate-500 mb-4 pb-4 border-b border-borderGray">
-                                                    評価元: {task.title}（自律レベル）
+                                                    評価元: {task.title}
                                                 </p>
-                                                <h4 className="text-xs font-bold text-slate-700 mb-2"><i className="fa-solid fa-lightbulb text-amber-500 mr-2"></i>VNA Insight（在宅医療への接続）</h4>
-                                                <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                                                <h4 className="text-xs font-bold text-slate-700 mb-2 flex items-center">
+                                                    <i className="fa-solid fa-lightbulb text-amber-500 mr-2"></i>VNA Insight
+                                                </h4>
+                                                <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
                                                     {task.insight}
                                                 </p>
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="mt-6">
-                                        <button onClick={() => { setShowInsightModal(false); setActiveTab('passport'); }} className="w-full bg-navy text-white text-sm font-bold py-4 rounded-xl shadow-lg">
+                                    <div className="mt-8 pb-4">
+                                        <button onClick={() => { setShowInsightModal(false); setActiveTab('passport'); }} className="w-full bg-navy text-white text-sm font-bold py-4 rounded-2xl shadow-lg active:scale-[0.98] transition">
                                             パスポートを確認する
                                         </button>
                                     </div>
@@ -167,7 +176,7 @@
                     </main>
 
                     {/* Bottom Navigation */}
-                    <nav className="bg-white border-t border-borderGray flex justify-around absolute bottom-0 w-full z-20 pb-safe">
+                    <nav className="bg-white border-t border-borderGray flex justify-around absolute bottom-0 w-full h-20 z-20">
                         <NavItem icon="fa-chart-pie" label="Dashboard" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
                         <NavItem icon="fa-list-check" label="Inventory" isActive={activeTab === 'record'} onClick={() => setActiveTab('record')} />
                         <NavItem icon="fa-id-card" label="Passport" isActive={activeTab === 'passport'} onClick={() => setActiveTab('passport')} />
@@ -178,50 +187,67 @@
         };
 
         const NavItem = ({ icon, label, isActive, onClick }) => (
-            <button onClick={onClick} className={`flex-1 py-3 flex flex-col items-center justify-center transition-colors ${isActive ? 'text-trustBlue' : 'text-slate-400'}`}>
-                <i className={`fa-solid ${icon} text-lg mb-1`}></i>
+            <button onClick={onClick} className={`flex-1 flex flex-col items-center justify-center transition-colors ${isActive ? 'text-trustBlue' : 'text-slate-400 hover:text-slate-600'}`}>
+                <i className={`fa-solid ${icon} text-xl mb-1.5`}></i>
                 <span className="text-[9px] font-bold tracking-wider uppercase">{label}</span>
             </button>
         );
 
-        // --- タブ：ダッシュボード ---
+        // --- タブ：ダッシュボード（UI完全修正版） ---
         const HomeTab = ({ score, setActiveTab }) => {
-            const radius = 60;
-            const circumference = 2 * Math.PI * radius;
+            // SVGレイアウトの正確な計算
+            const radius = 64; 
+            const circumference = 2 * Math.PI * radius; // 約402.12
             const strokeDashoffset = circumference - (score / 100) * circumference;
 
             return (
                 <div className="p-6 space-y-6 fade-in">
-                    <h1 className="text-xl font-bold text-navy mb-1">Overview</h1>
-                    <p className="text-xs text-slate-500 mb-6">現在のあなたの市場価値とレディネス</p>
+                    <div>
+                        <h1 className="text-2xl font-bold text-navy mb-1">Dashboard</h1>
+                        <p className="text-xs text-slate-500">現在の市場価値とレディネス</p>
+                    </div>
 
-                    <div className="bg-white rounded-2xl shadow-sm border border-borderGray p-6 flex items-center justify-between">
-                        <div>
-                            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-1">VNA Readiness</p>
-                            <div className="flex items-baseline space-x-1">
-                                <span className="text-4xl font-black text-navy tracking-tighter">{score}</span>
-                                <span className="text-sm font-bold text-slate-400">%</span>
-                            </div>
-                            <p className="text-[10px] text-trustBlue font-bold mt-2 bg-blue-50 px-2 py-1 rounded inline-block">認定まであと {100 - score} pt</p>
-                        </div>
-                        <div className="relative">
-                            <svg className="w-28 h-28">
-                                <circle className="text-slate-100" strokeWidth="8" stroke="currentColor" fill="transparent" r={radius} cx="56" cy="56" />
+                    {/* 中央配置の大きな円グラフカード */}
+                    <div className="bg-white rounded-[32px] shadow-sm border border-borderGray p-8 flex flex-col items-center relative overflow-hidden">
+                        <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-6">VNA Readiness</p>
+                        
+                        <div className="relative flex items-center justify-center mb-6">
+                            {/* SVGコンテナサイズを確実に確保 (144x144px) */}
+                            <svg className="w-36 h-36 transform -rotate-90">
+                                <circle className="text-slate-100" strokeWidth="10" stroke="currentColor" fill="transparent" r={radius} cx="72" cy="72" />
                                 <circle 
-                                    className="text-trustBlue progress-ring__circle" 
-                                    strokeWidth="8" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" stroke="currentColor" fill="transparent" r={radius} cx="56" cy="56" 
+                                    className="text-trustBlue transition-all duration-1000 ease-out" 
+                                    strokeWidth="10" 
+                                    strokeDasharray={circumference} 
+                                    strokeDashoffset={strokeDashoffset} 
+                                    strokeLinecap="round" 
+                                    stroke="currentColor" 
+                                    fill="transparent" 
+                                    r={radius} cx="72" cy="72" 
                                 />
                             </svg>
+                            <div className="absolute flex flex-col items-center justify-center">
+                                <span className="text-4xl font-black text-navy tracking-tighter">{score}</span>
+                                <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Score</span>
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-50 px-5 py-2.5 rounded-full border border-slate-100">
+                            <p className="text-[11px] text-slate-600 font-medium">認定まであと <span className="text-trustBlue font-bold">{100 - score} pt</span></p>
                         </div>
                     </div>
 
-                    <div className="bg-navy text-white rounded-2xl p-6 relative overflow-hidden shadow-md">
-                        <div className="absolute -right-4 -top-4 opacity-10"><i className="fa-solid fa-calendar-check text-8xl"></i></div>
-                        <h3 className="text-sm font-bold mb-2">今月のキャリア棚卸し</h3>
-                        <p className="text-xs text-slate-300 leading-relaxed mb-4">
+                    <div className="bg-navy rounded-[32px] p-6 text-white relative overflow-hidden shadow-lg border border-slate-800">
+                        <div className="absolute -right-4 -top-4 opacity-[0.05]">
+                            <i className="fa-solid fa-calendar-check text-9xl"></i>
+                        </div>
+                        <h3 className="text-sm font-bold mb-3 flex items-center">
+                            <i className="fa-regular fa-clock mr-2 text-trustBlue"></i>今月のキャリア棚卸し
+                        </h3>
+                        <p className="text-xs text-slate-300 leading-relaxed mb-6 opacity-90">
                             月に一度、病棟での実践を振り返りましょう。厳格な基準であなたのスキルを在宅医療の文脈に翻訳します。
                         </p>
-                        <button onClick={() => setActiveTab('record')} className="bg-trustBlue text-white text-xs font-bold py-3 px-4 rounded-lg shadow w-full hover:bg-blue-700 transition">
+                        <button onClick={() => setActiveTab('record')} className="bg-trustBlue text-white text-xs font-bold py-3.5 px-4 rounded-xl shadow-md w-full active:bg-blue-700 active:scale-[0.98] transition-all">
                             今月の棚卸しを開始する
                         </button>
                     </div>
@@ -229,18 +255,18 @@
             );
         };
 
-        // --- タブ：月次棚卸し（厳密な4段階評価） ---
+        // --- タブ：月次棚卸し ---
         const RecordTab = ({ inventory, handleUpdateInventory, submitInventory }) => {
             return (
                 <div className="p-6 h-full flex flex-col fade-in">
                     <div className="mb-6">
-                        <h1 className="text-xl font-bold text-navy mb-1">Career Inventory</h1>
+                        <h1 className="text-2xl font-bold text-navy mb-2">Career Inventory</h1>
                         <p className="text-xs text-slate-500 leading-relaxed">
-                            以下の具体例を参考に、現在のあなたの実践レベルを最も正確に表すステータスを選択してください。（自律レベル以上で評価に反映されます）
+                            以下の具体例を参考に、現在のあなたの実践レベルを最も正確に表すステータスを選択してください。
                         </p>
                     </div>
 
-                    <div className="space-y-8 pb-6 flex-1">
+                    <div className="space-y-6 flex-1">
                         {tasksData.map((task) => (
                             <InventoryItem 
                                 key={task.id} 
@@ -251,8 +277,8 @@
                         ))}
                     </div>
 
-                    <div className="mt-4">
-                        <button onClick={submitInventory} className="w-full bg-navy text-white text-sm font-bold py-4 rounded-xl shadow-lg active:bg-slate-800 transition">
+                    <div className="mt-8">
+                        <button onClick={submitInventory} className="w-full bg-navy text-white text-sm font-bold py-4 rounded-2xl shadow-lg active:scale-[0.98] transition">
                             評価を確定し、翻訳する
                         </button>
                     </div>
@@ -269,29 +295,31 @@
             ];
 
             return (
-                <div className="bg-white border border-borderGray rounded-xl p-5 shadow-sm">
-                    <div className="mb-4">
-                        <span className="text-[10px] font-bold text-trustBlue tracking-wider">{task.category}</span>
-                        <h3 className="text-sm font-bold text-navy mt-1 mb-2">{task.title}</h3>
-                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                            <p className="text-[10px] font-bold text-slate-500 mb-1">【具体例】</p>
+                <div className="bg-white border border-borderGray rounded-[24px] p-5 shadow-sm">
+                    <div className="mb-5">
+                        <span className="text-[9px] font-bold text-trustBlue tracking-widest uppercase">{task.category}</span>
+                        <h3 className="text-sm font-bold text-navy mt-1 mb-3">{task.title}</h3>
+                        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                            <p className="text-[10px] font-bold text-slate-400 mb-1.5 flex items-center">
+                                <i className="fa-solid fa-circle-info mr-1"></i>具体例
+                            </p>
                             <p className="text-[11px] text-slate-600 leading-relaxed">{task.examples}</p>
                         </div>
                     </div>
                     
                     <div>
-                        <p className="text-[10px] font-bold text-slate-400 mb-2">習熟度ステータス</p>
+                        <p className="text-[10px] font-bold text-slate-500 mb-2">習熟度ステータス</p>
                         <div className="grid grid-cols-2 gap-2">
                             {levels.map(lvl => (
                                 <button 
                                     key={lvl.val}
                                     onClick={() => onChange(lvl.val)}
-                                    className={`py-2 px-1 text-[10px] font-bold rounded flex items-center justify-center border transition-all
+                                    className={`py-3 px-2 text-[10px] font-bold rounded-xl flex items-center justify-center border transition-all
                                         ${currentLevel === lvl.val 
-                                            ? 'bg-trustBlue border-trustBlue text-white shadow-sm' 
+                                            ? 'bg-trustBlue border-trustBlue text-white shadow-sm ring-2 ring-blue-100' 
                                             : 'bg-white border-borderGray text-slate-500 hover:bg-slate-50'}`}
                                 >
-                                    {currentLevel === lvl.val && <i className="fa-solid fa-check mr-1"></i>}
+                                    {currentLevel === lvl.val && <i className="fa-solid fa-check mr-1.5"></i>}
                                     {lvl.label}
                                 </button>
                             ))}
@@ -301,49 +329,61 @@
             );
         };
 
-        // --- タブ：パスポート（証明書） ---
+        // --- タブ：パスポート ---
         const PassportTab = ({ score, inventory }) => {
             return (
                 <div className="p-6 space-y-6 fade-in">
-                    <div className="bg-navy rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-                        <div className="absolute right-0 top-0 w-32 h-32 bg-trustBlue rounded-full blur-[50px] opacity-20"></div>
-                        <div className="flex justify-between items-start mb-6">
+                    <div className="bg-navy rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden border border-slate-800">
+                        <div className="absolute right-0 top-0 w-40 h-40 bg-trustBlue rounded-full blur-[60px] opacity-20"></div>
+                        <div className="flex justify-between items-start mb-8 relative z-10">
                             <div>
-                                <p className="text-[9px] font-bold opacity-60 tracking-widest uppercase mb-1">Official Credentials</p>
-                                <h1 className="text-lg font-bold">VNA Career Passport</h1>
+                                <p className="text-[9px] font-bold opacity-50 tracking-widest uppercase mb-1.5">Official Credentials</p>
+                                <h1 className="text-xl font-bold">VNA Passport</h1>
                             </div>
-                            <div className="w-8 h-8 bg-white/10 backdrop-blur rounded flex items-center justify-center">
+                            <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/5">
                                 <i className="fa-solid fa-qrcode text-sm"></i>
                             </div>
                         </div>
                         
-                        <div className="flex items-end space-x-6 border-t border-white/10 pt-4">
+                        <div className="flex items-end space-x-8 border-t border-white/10 pt-5 relative z-10">
                             <div>
-                                <p className="text-[9px] opacity-60 uppercase mb-1">Score</p>
-                                <p className="text-2xl font-black">{score}</p>
+                                <p className="text-[9px] opacity-50 uppercase font-bold tracking-widest mb-1">Score</p>
+                                <p className="text-3xl font-black">{score}</p>
                             </div>
                             <div>
-                                <p className="text-[9px] opacity-60 uppercase mb-1">Status</p>
-                                <p className="text-xs font-bold text-emerald-400"><i className="fa-solid fa-circle text-[8px] mr-1"></i>Verified</p>
+                                <p className="text-[9px] opacity-50 uppercase font-bold tracking-widest mb-1">Status</p>
+                                <p className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded inline-flex items-center">
+                                    <i className="fa-solid fa-circle text-[6px] mr-1.5"></i>Verified
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <div>
-                        <h3 className="text-sm font-bold text-navy mb-4">認定済みスキル（自律レベル以上）</h3>
+                        <h3 className="text-sm font-bold text-navy mb-4 flex items-center">
+                            <i className="fa-solid fa-shield-halved mr-2 text-trustBlue"></i>認定済みスキル
+                        </h3>
                         <div className="space-y-3">
                             {tasksData.map(task => {
                                 const level = inventory[task.id];
                                 const isVerified = level >= 2;
                                 return (
-                                    <div key={task.id} className={`p-4 rounded-xl border flex items-center justify-between transition-all ${isVerified ? 'bg-white border-trustBlue shadow-sm' : 'bg-slate-50 border-borderGray opacity-50'}`}>
-                                        <div>
-                                            <p className={`text-xs font-bold ${isVerified ? 'text-navy' : 'text-slate-500'}`}>{task.vnaSkill}</p>
-                                            <p className="text-[10px] text-slate-400 mt-1">
-                                                {isVerified ? `病棟実績: ${task.title}` : '未認定（自律的実践が必要）'}
+                                    <div key={task.id} className={`p-5 rounded-2xl border flex items-center justify-between transition-all ${isVerified ? 'bg-white border-borderGray shadow-sm' : 'bg-slate-50 border-transparent opacity-60'}`}>
+                                        <div className="pr-4">
+                                            <p className={`text-xs font-bold mb-1 ${isVerified ? 'text-navy' : 'text-slate-500'}`}>{task.vnaSkill}</p>
+                                            <p className="text-[10px] text-slate-400 leading-tight">
+                                                {isVerified ? `実績: ${task.title}` : '未認定（自律的実践が必要）'}
                                             </p>
                                         </div>
-                                        {isVerified && <i className="fa-solid fa-shield-check text-trustBlue text-lg"></i>}
+                                        {isVerified ? (
+                                            <div className="w-8 h-8 rounded-full bg-blue-50 text-trustBlue flex items-center justify-center flex-shrink-0">
+                                                <i className="fa-solid fa-check text-sm"></i>
+                                            </div>
+                                        ) : (
+                                            <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-300 flex items-center justify-center flex-shrink-0">
+                                                <i className="fa-solid fa-lock text-[10px]"></i>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -356,35 +396,38 @@
         // --- タブ：スカウト ---
         const ScoutTab = ({ score }) => (
             <div className="p-6 h-full flex flex-col fade-in">
-                <h2 className="text-xl font-bold text-navy mb-1">Connect</h2>
-                <p className="text-xs text-slate-500 mb-6">厳格な審査を通過したステーションからのオファー</p>
+                <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-navy mb-1">Connect</h2>
+                    <p className="text-xs text-slate-500">厳格な審査を通過したステーションからのオファー</p>
+                </div>
 
                 {score >= 70 ? (
-                    <div className="space-y-4">
-                        <div className="bg-white rounded-2xl shadow-sm border border-borderGray overflow-hidden relative">
-                            <div className="h-1 bg-trustBlue w-full"></div>
-                            <div className="p-5">
-                                <div className="flex items-start justify-between mb-4">
+                    <div className="space-y-5">
+                        <div className="bg-white rounded-[24px] shadow-sm border border-borderGray overflow-hidden relative">
+                            <div className="h-1.5 bg-trustBlue w-full"></div>
+                            <div className="p-6">
+                                <div className="flex items-start justify-between mb-5">
                                     <div className="flex items-center space-x-3">
-                                        <div className="w-10 h-10 bg-slate-100 rounded text-slate-600 flex items-center justify-center">
-                                            <i className="fa-solid fa-building"></i>
+                                        <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-xl text-slate-400 flex items-center justify-center">
+                                            <i className="fa-solid fa-building text-xl"></i>
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-sm text-navy">慶應・広尾訪問看護ステーション</h3>
-                                            <p className="text-[10px] text-slate-500">東京都 渋谷区 / 大規模・教育体制充実</p>
+                                            <h3 className="font-bold text-sm text-navy">慶應・広尾訪問看護st</h3>
+                                            <p className="text-[10px] text-slate-500 mt-0.5">東京都渋谷区 / 教育体制充実</p>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mb-4">
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-5 relative">
+                                    <div className="absolute -left-1 top-4 w-2 h-2 bg-trustBlue rounded-full"></div>
                                     <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                                        「あなたのパスポートを拝見しました。病棟での『自律した急変対応』と『退院支援』の実績は、当ステーションが求めるリスクマネジメント力そのものです。まずは見学やカジュアル面談でお話ししませんか？」
+                                        「あなたのパスポートを拝見しました。病棟での『自律した急変対応』と『退院支援』の実績は、当ステーションが求めるリスクマネジメント力そのものです。まずは見学でお話ししませんか？」
                                     </p>
                                 </div>
                                 <div className="flex space-x-3">
-                                    <button className="flex-1 border border-borderGray text-navy text-xs font-bold py-3 rounded-lg hover:bg-slate-50 transition">
+                                    <button className="flex-1 border border-borderGray text-navy text-xs font-bold py-3.5 rounded-xl hover:bg-slate-50 transition active:scale-[0.98]">
                                         詳細を見る
                                     </button>
-                                    <button className="flex-1 bg-navy text-white text-xs font-bold py-3 rounded-lg hover:bg-slate-800 transition shadow-sm">
+                                    <button className="flex-1 bg-navy text-white text-xs font-bold py-3.5 rounded-xl shadow-md hover:bg-slate-800 transition active:scale-[0.98]">
                                         面談を希望する
                                     </button>
                                 </div>
@@ -392,10 +435,12 @@
                         </div>
                     </div>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-                        <i className="fa-solid fa-lock text-3xl text-slate-300 mb-3"></i>
-                        <h3 className="text-sm font-bold text-slate-500 mb-2">プレミアムスカウトはロックされています</h3>
-                        <p className="text-xs text-slate-400 leading-relaxed">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
+                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+                            <i className="fa-solid fa-lock text-2xl text-slate-300"></i>
+                        </div>
+                        <h3 className="text-sm font-bold text-slate-600 mb-2">プレミアムスカウトはロックされています</h3>
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
                             レディネススコアが <span className="font-bold text-navy">70pt</span> に達すると、あなたの証明されたスキルにマッチする優良ステーションからのスカウトが解放されます。
                         </p>
                     </div>
